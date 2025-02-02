@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTML File Runner</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: #f5f5f5;
+            margin: 0;
+        }
+        #controls {
+            margin-bottom: 20px;
+        }
+        iframe {
+            width: 80%;
+            height: 80%;
+            border: 1px solid #ddd;
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
+</head>
+<body>
+    <h1>Upload and Run HTML</h1>
+    <div id="controls">
+        <input type="file" id="fileInput" accept=".zip">
+        <select id="fileSelect"></select>
+        <button onclick="loadSelectedFile()">Load Selected File</button>
+    </div>
+    <iframe id="outputFrame"></iframe>
+
+    <script>
+        let zipFile = null;
+        let zipContents = {};
+
+        document.getElementById('fileInput').addEventListener('change', async function(event) {
+            const file = event.target.files[0];
+            if (file && file.name.endsWith('.zip')) {
+                const reader = new FileReader();
+                reader.onload = async function(e) {
+                    zipFile = await JSZip.loadAsync(e.target.result);
+                    displayFileList();
+                };
+                reader.readAsArrayBuffer(file);
+            } else {
+                alert('Please upload a ZIP file.');
+            }
+        });
+
+        async function displayFileList() {
+            const fileSelect = document.getElementById('fileSelect');
+            fileSelect.innerHTML = '';
+            zipFile.forEach((relativePath, file) => {
+                if (relativePath.endsWith('.html')) {
+                    zipContents[relativePath] = file;
+                    const option = document.createElement('option');
+                    option.value = relativePath;
+                    option.text = relativePath;
+                    fileSelect.appendChild(option);
+                }
+            });
+        }
+
+        async function loadSelectedFile() {
+            const fileSelect = document.getElementById('fileSelect');
+            const selectedFile = fileSelect.value;
+            if (selectedFile) {
+                const fileData = await zipContents[selectedFile].async('string');
+                const iframe = document.getElementById('outputFrame');
+                iframe.srcdoc = fileData;
+            } else {
+                alert('Please select an HTML file from the dropdown.');
+            }
+        }
+    </script>
+</body>
+</html>
